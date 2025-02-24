@@ -1,53 +1,47 @@
 package com.vynohradov_nick.controller;
 
 
+
 import com.vynohradov_nick.entity.User;
-import com.vynohradov_nick.repository.UserRepository;
 import com.vynohradov_nick.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
-@RequestMapping("/api/auth")
+@Controller
 public class AuthController {
 
 
     private UserService userService;
 
-
-    private AuthenticationManager authenticationManager;
-
-
-    public AuthController(UserService userService, AuthenticationManager authenticationManager) {
+    public AuthController(UserService userService) {
         this.userService = userService;
-        this.authenticationManager = authenticationManager;
     }
 
-    // Регистрация нового пользователя
+    // Страница регистрации
+    @GetMapping("/register")
+    public String showRegistrationForm(Model model) {
+        model.addAttribute("user", new User());
+        return "register";
+    }
+
+    // Обработка регистрации
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
+    public String processRegistration(@ModelAttribute("user") User user, BindingResult result, Model model) {
         try {
             userService.registerUser(user);
-            return ResponseEntity.ok("User registered successfully");
-        } catch (Exception ex) {
-            return ResponseEntity.badRequest().body(ex.getMessage());
+        } catch (RuntimeException ex) {
+            result.rejectValue("username", "error.user", ex.getMessage());
+            return "register";
         }
+        return "redirect:/login?registered";
     }
 
-    // Авторизация (вход) через Basic Auth
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User user) {
-        try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword())
-            );
-            return ResponseEntity.ok("Login successful");
-        } catch (Exception ex) {
-            return ResponseEntity.badRequest().body("Invalid credentials");
-        }
+    // Страница логина (обработку формы осуществляет Spring Security)
+    @GetMapping("/login")
+    public String showLoginForm() {
+        return "login";
     }
 }

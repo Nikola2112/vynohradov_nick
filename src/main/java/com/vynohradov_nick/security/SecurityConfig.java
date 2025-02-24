@@ -1,5 +1,6 @@
 package com.vynohradov_nick.security;
 
+
 import com.vynohradov_nick.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -12,8 +13,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-
-import java.util.ArrayList;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -34,7 +33,7 @@ public class SecurityConfig {
                 .map(user -> new org.springframework.security.core.userdetails.User(
                         user.getUsername(),
                         user.getPassword(),
-                        new ArrayList<>()
+                        java.util.Collections.emptyList()
                 ))
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
@@ -45,17 +44,25 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/h2-console/**").permitAll()
+                        .requestMatchers("/register", "/login", "/css/**", "/js/**", "/h2-console/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .httpBasic(withDefaults());
-
-        // Для работы H2 консоли отключаем защиту от фреймов
+                .formLogin(form -> form
+                        // Используем новый URL для страницы логина, чтобы не было конфликта
+                        .loginPage("/login")
+                        .defaultSuccessUrl("/tasks", true)
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout")
+                        .permitAll()
+                );
+        // Для работы H2 консоли
         http.headers(headers -> headers.frameOptions(frame -> frame.disable()));
-
         return http.build();
     }
 }
