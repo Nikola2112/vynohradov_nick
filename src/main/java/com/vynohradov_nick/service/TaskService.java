@@ -6,7 +6,6 @@ import com.vynohradov_nick.entity.User;
 import com.vynohradov_nick.repository.TaskAttachmentRepository;
 import com.vynohradov_nick.repository.TaskRepository;
 import com.vynohradov_nick.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,14 +15,20 @@ import java.util.List;
 @Service
 public class TaskService {
 
-    @Autowired
+
     private TaskRepository taskRepository;
 
-    @Autowired
+
     private TaskAttachmentRepository taskAttachmentRepository;
 
-    @Autowired
+
     private UserRepository userRepository;
+
+    public TaskService(TaskRepository taskRepository, TaskAttachmentRepository taskAttachmentRepository, UserRepository userRepository) {
+        this.taskRepository = taskRepository;
+        this.taskAttachmentRepository = taskAttachmentRepository;
+        this.userRepository = userRepository;
+    }
 
     public List<Task> getTasksByUsername(String username) {
         User user = userRepository.findByUsername(username)
